@@ -103,7 +103,10 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# HACK code file
+# VSCODE
+.vscode/
+
+# Test outputs
 *.out
 *.asm
 *.xml
