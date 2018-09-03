@@ -100,7 +100,7 @@ class Tokenizer:
             return []
         ret = []
         match = re.search(
-            r"([\&\|\(\)<=\+\-\*>\\.;,\[\]}{])", candidate.strip()
+            r"([\&\|\(\)<=\+\-\*>\\/.;,\[\]}{])", candidate.strip()
         )
         if match is not None:
             ret.extend(Tokenizer.handle_token_candidate(
@@ -161,4 +161,6 @@ if __name__ == "__main__":
         TEST_LINES = f.readlines()
     TOKENIZER = Tokenizer(TEST_LINES)
     print(TOKENIZER.tokens)
+    print('-----------------')
+    print(TOKENIZER.handle_token_candidate('a/=2;b+=3;'))
     
