@@ -98,28 +98,22 @@ class Tokenizer:
 
         if not candidate:
             return []
-        candidate = candidate.split('.')
-        if len(candidate) == 1:
-            candidate = candidate[0]
-            if candidate.endswith(','):
-                return [candidate[:-1], ',']
-            elif candidate.endswith(';'):
-                return Tokenizer.handle_token_candidate(candidate[:-1]) + [';']
-            elif candidate.endswith(')'):
-                if candidate.startswith('('):
-                    return ['(', candidate[1:-1], ')']
-                else:
-                    return [candidate[:-2], '(', ')']
-            elif candidate.startswith('('):
-                return ['(', candidate[1:]]
-            elif candidate.endswith(']'):
-                candidate = candidate.strip().split('[')
-                return [candidate[0], '[', candidate[1][:-1], ']']
-            return [candidate]
+        ret = []
+        match = re.search(
+            r"([\&\|\(\)<=\+\-\*>\\.;,\[\]}{])", candidate.strip()
+        )
+        if match is not None:
+            ret.extend(Tokenizer.handle_token_candidate(
+                match.string[:match.start()]
+            ))
+            ret.append(match.string[match.start()])
+            ret.extend(Tokenizer.handle_token_candidate(
+                match.string[match.end():]
+            ))
         else:
-            ret = [candidate[0], '.']
-            ret.extend(Tokenizer.handle_token_candidate(candidate[1]))
-            return ret
+            ret.append(candidate)
+
+        return ret
 
     @staticmethod
     def clean_code(raw_code):
