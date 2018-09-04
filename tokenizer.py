@@ -46,14 +46,14 @@ class Tokenizer:
                      'boolean', 'void', 'true', 'false', 'null',
                      'this', 'let', 'do', 'return', 'else', 'while'):
             symbol_type = 'KEYWORD'
-        elif token in '{}()[].,;+-*/&|<>=':
+        elif token in '{}()[].,;+-*/&|<>=~':
             symbol_type = 'SYMBOL'
         elif token.isdigit():
             symbol_type = 'INT_CONST'
-        elif token.isidentifier():
-            symbol_type = 'IDENTIFIER'
         elif token.startswith('"'):
             symbol_type = 'STRING_CONST'
+        elif (not token[0].isdigit()):
+            symbol_type = 'IDENTIFIER'
         else:
             raise SyntaxError('Invalid token : {}'.format(token))
         return symbol_type      
@@ -100,7 +100,7 @@ class Tokenizer:
             return []
         ret = []
         match = re.search(
-            r"([\&\|\(\)<=\+\-\*>\\/.;,\[\]}{])", candidate.strip()
+            r"([\&\|\(\)<=\+\-\*>\\/.;,\[\]}{~])", candidate.strip()
         )
         if match is not None:
             ret.extend(Tokenizer.handle_token_candidate(
@@ -154,10 +154,18 @@ class Tokenizer:
         """
 
         return self.tokens[self.current_token_index]
+    
+    @property
+    def next_token(self):
+        """Returns next token if there is one.
+        """
+
+        if self.has_more_tokens():
+            return self.tokens[self.current_token_index + 1]
 
 
 if __name__ == "__main__":
-    with open('10/Square/Main.jack', 'r') as f:
+    with open('10/ExpressionLessSquare/Main.jack', 'r') as f:
         TEST_LINES = f.readlines()
     TOKENIZER = Tokenizer(TEST_LINES)
     print(TOKENIZER.tokens)
