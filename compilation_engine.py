@@ -57,7 +57,7 @@ class CompilationEngine:
         ET.SubElement(current_node, 'symbol').text = '}'
         
         return xml_minidom.parseString(ET.tostring(current_node))\
-            .toprettyxml()
+            .documentElement.toprettyxml()
 
     def compile_class_var_dec(self, parent_node):
         """Compiles the Jack class variable declaration(s).
@@ -170,6 +170,7 @@ class CompilationEngine:
         current_node = ET.SubElement(parent_node, 'parameterList')
 
         if tk.current_token == ')':
+            current_node.text = '\n'
             return
         
         if tk.current_token not in (
@@ -411,7 +412,7 @@ class CompilationEngine:
 
         if tk.current_token != '{':
             raise SyntaxError('"{" exprected after while.')
-        ET.SubElement(current_node, 'symbol').text = '}'
+        ET.SubElement(current_node, 'symbol').text = '{'
         tk.advance()
 
         self.compile_statements(current_node)
@@ -500,7 +501,7 @@ class CompilationEngine:
         tk = self.tokenizer
 
         if tk.current_token == ')':
-            ET.SubElement(parent_node, 'expressionList')
+            ET.SubElement(parent_node, 'expressionList').text = '\n'
             return
         
         current_node = ET.SubElement(parent_node, 'expressionList')
