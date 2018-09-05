@@ -109,4 +109,4 @@ venv.bak/
 # Test outputs
 *.out
 *.asm
-*.xml
+*_local.xml

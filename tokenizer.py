@@ -126,7 +126,19 @@ class Tokenizer:
             list: A list (str) of clean code.
         """
 
-        lines = [line.strip() for line in raw_code]
+        lines = []
+        comment_on = False
+        for line in raw_code:
+            line = line.strip()
+            if line.startswith('/*') and (not line.endswith('*/')):
+                comment_on = True
+            
+            if not comment_on:
+                lines.append(line)
+
+            if line.startswith('*/'):
+                comment_on = False
+
         lines = [line.split('//')[0].strip() for line in lines 
                  if Tokenizer.is_valid(line)]
         return lines
@@ -165,7 +177,7 @@ class Tokenizer:
 
 
 if __name__ == "__main__":
-    with open('10/ExpressionLessSquare/Main.jack', 'r') as f:
+    with open('10/Square/SquareGame.jack', 'r') as f:
         TEST_LINES = f.readlines()
     TOKENIZER = Tokenizer(TEST_LINES)
     print(TOKENIZER.tokens)

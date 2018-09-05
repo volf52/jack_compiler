@@ -563,6 +563,12 @@ class CompilationEngine:
             ET.SubElement(current_node, 'symbol').text = tk.current_token
             tk.advance()
             self.compile_term(current_node)
+        elif tk.current_token == '(':
+            ET.SubElement(current_node, 'symbol').text = '('
+            tk.advance()
+            self.compile_expression(current_node)
+            ET.SubElement(current_node, 'symbol').text = ')'
+            tk.advance()
         else:
             if tk.token_type() != 'IDENTIFIER':
                 raise SyntaxError('{} is not a valid identifier.'
@@ -599,13 +605,13 @@ class CompilationEngine:
 
 
 if __name__ == '__main__':
-    engine = CompilationEngine('10/ExpressionLessSquare/Main.jack', 
-                               '10/ExpressionLessSquare/Main_local.xml', 
+    engine = CompilationEngine('10/Square/SquareGame.jack', 
+                               '10/Square/SquareGame_local.xml', 
                                ['Main', 'Square', 'SquareGame'])
     if engine.tokenizer.current_token == 'class':
         xml_output = engine.compile_class()
         with open(engine.outfile, 'w') as f:
             f.write(xml_output)
     else:
-        raise SyntaxError('The {} file should begin with class \
-         declaration.'.format(engine.infile))
+        raise SyntaxError('The {} file should begin with class declaration.'
+                          .format(engine.tokenizer.current_token))
