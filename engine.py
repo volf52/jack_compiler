@@ -12,7 +12,6 @@ class CompilationEngine:
         with open(input_file, 'r') as f:
             self.tokenizer = Tokenizer(f.readlines())
         self.infile = input_file
-        self.output_stream = None
         self.outfile = output_file
         self.class_name = os.path.splitext(
             os.path.split(input_file)[-1])[0]
@@ -20,6 +19,14 @@ class CompilationEngine:
             'Array', 'String', 'Screen', 'Math', 'Keyboard', 
             'Memory', 'Screen', 'Sys'
         ]
+        self.code = None
+    
+    def generate_output(self):
+        if self.code is not None:
+            with open(self.outfile, 'w') as f:
+                f.write(self.code)
+        else:
+            print('Unable to generate code.')
 
     def compile_class(self):
         """Compiles a Jack class to XML doc.
@@ -56,7 +63,7 @@ class CompilationEngine:
             raise SyntaxError('} expected at end.')
         ET.SubElement(current_node, 'symbol').text = '}'
         
-        return xml_minidom.parseString(ET.tostring(current_node))\
+        self.code = xml_minidom.parseString(ET.tostring(current_node))\
             .documentElement.toprettyxml()
 
     def compile_class_var_dec(self, parent_node):
