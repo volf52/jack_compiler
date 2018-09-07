@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 from engine import CompilationEngine
+from tokenizer import Tokenizer
 
 
 def get_names(path):
@@ -47,10 +48,11 @@ def main():
 
     args = parser.parse_args()
     classes_in_dir, file_paths, outnames = get_names(args.inp_path)
-    for pth, out_pth in zip(file_paths, outnames):
-        engine = CompilationEngine(pth, out_pth, classes_in_dir)
+    for name, pth, out_pth in zip(classes_in_dir, file_paths, outnames):
+        with open(pth, 'r') as f:
+            tk = Tokenizer(f.readlines())
+        engine = CompilationEngine(tk, name, out_pth, classes_in_dir)
         engine.compile_class()
-        engine.generate_output()
 
 
 if __name__ == '__main__':

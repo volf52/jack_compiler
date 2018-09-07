@@ -1,32 +1,20 @@
 import xml.dom.minidom as xml_minidom
 from xml.etree import ElementTree as ET
-import os
-from tokenizer import Tokenizer
 
 
 class CompilationEngine:
     """Creates an AST of the input file. 
     """
     
-    def __init__(self, input_file, output_file, classes_in_dir):
-        with open(input_file, 'r') as f:
-            self.tokenizer = Tokenizer(f.readlines())
-        self.infile = input_file
+    def __init__(self, input_stream, name, output_file, classes_in_dir):
+        self.tokenizer = input_stream
         self.outfile = output_file
-        self.class_name = os.path.splitext(
-            os.path.split(input_file)[-1])[0]
+        self.class_name = name
+        self.out_stream = []
         self.classes_in_dir = classes_in_dir + [
             'Array', 'String', 'Screen', 'Math', 'Keyboard', 
             'Memory', 'Screen', 'Sys'
         ]
-        self.code = None
-    
-    def generate_output(self):
-        if self.code is not None:
-            with open(self.outfile, 'w') as f:
-                f.write(self.code)
-        else:
-            print('Unable to generate code.')
 
     def compile_class(self):
         """Compiles a Jack class to XML doc.
@@ -63,8 +51,11 @@ class CompilationEngine:
             raise SyntaxError('} expected at end.')
         ET.SubElement(current_node, 'symbol').text = '}'
         
-        self.code = xml_minidom.parseString(ET.tostring(current_node))\
+        code = xml_minidom.parseString(ET.tostring(current_node))\
             .documentElement.toprettyxml()
+        
+        with open(self.outfile, 'w') as f:
+                f.write(code)
 
     def compile_class_var_dec(self, parent_node):
         """Compiles the Jack class variable declaration(s).
