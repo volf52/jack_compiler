@@ -22,8 +22,9 @@ def get_names(path):
         path, tmp_name = os.path.split(path)
         name, ext = os.path.splitext(tmp_name)
         out_names.append(os.path.join(path, name + '_local.xml'))
-        names = [os.path.splitext(x)[0] for x in os.listdir(path)
-                     if os.path.splitext(x)[1] == '.jack']
+        if path:
+                names = [os.path.splitext(x)[0] for x in os.listdir(path)
+                         if os.path.splitext(x)[1] == '.jack']
         if ext != '.jack':
             print("Provided file is not a jack file.")
             sys.exit(1)
@@ -50,6 +51,7 @@ def main():
         engine = CompilationEngine(pth, out_pth, classes_in_dir)
         engine.compile_class()
         engine.generate_output()
+
 
 if __name__ == '__main__':
     main()
