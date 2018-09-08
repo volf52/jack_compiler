@@ -18,7 +18,7 @@ class SymbolTable(dict):
         Args:
             name (str): The name of the variable
             _type (str): The type of the variable
-            kind (str): STATIC, ARG, FIELD or INT
+            kind (str): STATIC, ARG, FIELD or VAR
         
         Raises:
             TypeError: The kind of given variable is invalid
@@ -26,13 +26,14 @@ class SymbolTable(dict):
 
         if kind in ('STATIC', 'ARG'):
             i = 0
-        elif kind in ('FIELD', 'VAR'):
+        elif kind in ('FIELD', 'LOCAL'):
             i = 1
         else:
             raise TypeError('{} is not a supported kind.'.format(kind))
         
         self[name] = (_type, kind, self._index[i])
         self._index[i] += 1
+        return self._index[i] - 1
 
     def reset(self):
         """Clears the table.

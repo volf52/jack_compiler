@@ -13,7 +13,7 @@ class VMWriter:
         self._segment_mapping = {key: key.lower() for key in ['POINTER', 
                                  'LOCAL', 'STATIC', 'THIS', 'THAT', 'TEMP']}
         self._segment_mapping.update({
-            'ARG': 'argument', 'CONST': 'constant'
+            'ARG': 'argument', 'CONST': 'constant', 'FIELD': 'this'
         })
         self.if_count = 0
         self.while_count = 0

@@ -1,5 +1,7 @@
 import xml.dom.minidom as xml_minidom
 from xml.etree import ElementTree as ET
+from generator import VMWriter
+from symbolTable import SymbolTable
 
 
 class CompilationEngine:
@@ -11,6 +13,9 @@ class CompilationEngine:
         self.outfile = output_file
         self.class_name = name
         self.out_stream = []
+        self.generator = VMWriter(self.out_stream)
+        self.class_table = SymbolTable()
+        self.subroutine_table = SymbolTable()
         self.classes_in_dir = classes_in_dir + [
             'Array', 'String', 'Screen', 'Math', 'Keyboard', 
             'Memory', 'Screen', 'Sys'
@@ -34,7 +39,8 @@ class CompilationEngine:
         if tk.current_token != self.class_name:
             raise SyntaxError('Class name expected. {} is not \
                 same as file name.'.format(tk.current_token))
-        ET.SubElement(current_node, 'identifier').text = tk.current_token
+        ET.SubElement(current_node, 'identifier', 
+                      cat='class').text = tk.current_token
         tk.advance()
 
         if tk.current_token != '{':
@@ -73,6 +79,7 @@ class CompilationEngine:
         if tk.current_token not in ('static', 'field'):
             raise SyntaxError("Class variable must be static/field.")
         ET.SubElement(current_node, 'keyword').text = tk.current_token
+        cat = tk.current_token.upper()
         tk.advance()
 
         # Check variable type
@@ -81,6 +88,7 @@ class CompilationEngine:
         ):
             raise SyntaxError('{} is not a valid variable type.'
                               .format(tk.current_token))
+        _type = tk.current_token
         ET.SubElement(current_node, tk.token_type().lower()).text \
             = tk.current_token
         tk.advance()
@@ -89,7 +97,9 @@ class CompilationEngine:
         if tk.token_type() != 'IDENTIFIER':
             raise SyntaxError('{} is not a valid Jack identifier'
                               .format(tk.current_token))
-        ET.SubElement(current_node, 'identifier').text = tk.current_token
+        i = self.class_table.define(tk.current_token, _type, cat)
+        ET.SubElement(current_node, 'identifier', 
+                      cat=cat, type=_type, i=str(i)).text = tk.current_token
         tk.advance()
 
         while tk.current_token != ';':
@@ -100,8 +110,11 @@ class CompilationEngine:
 
             if tk.token_type() != 'IDENTIFIER':
                 raise SyntaxError('{} is not a valid Jack identifer.'
-                                  .format(tk.current_token))
-            ET.SubElement(current_node, 'identifier').text = tk.current_token
+                                  .format(tk.current_token))        
+            i = self.class_table.define(tk.current_token, _type, cat)
+            ET.SubElement(current_node, 'identifier',
+                          cat=cat, type=_type, i=str(i)
+                          ).text = tk.current_token
             tk.advance()
         
         ET.SubElement(current_node, 'symbol').text = ';'
@@ -123,6 +136,8 @@ class CompilationEngine:
         if tk.current_token not in ('constructor', 'function', 'method'):
             raise SyntaxError('Subroutine dec not valid.')
         ET.SubElement(current_node, 'keyword').text = tk.current_token
+        if tk.current_token == 'method':
+            self.subroutine_table.define('this', self.class_name, 'ARG')
         tk.advance()
 
         if tk.current_token not in (
@@ -166,6 +181,7 @@ class CompilationEngine:
 
         tk = self.tokenizer
         current_node = ET.SubElement(parent_node, 'parameterList')
+        cat = 'ARG'
 
         if tk.current_token == ')':
             current_node.text = '\n'
@@ -176,6 +192,7 @@ class CompilationEngine:
         ):
             raise SyntaxError('{} is not a valid variable type.'
                               .format(tk.current_token))
+        _type = tk.current_token
         ET.SubElement(current_node, tk.token_type().lower()).text \
             = tk.current_token
         tk.advance()
@@ -183,7 +200,9 @@ class CompilationEngine:
         if tk.token_type() != 'IDENTIFIER':
             raise SyntaxError('{} is not a valid Jack identifier'
                               .format(tk.current_token))
-        ET.SubElement(current_node, 'identifier').text = tk.current_token
+        i = self.subroutine_table.define(tk.current_token, _type, cat)     
+        ET.SubElement(current_node, 'identifier',
+                      cat=cat, type=_type, i=str(i)).text = tk.current_token
         tk.advance()
 
         while tk.current_token != ')':
@@ -199,12 +218,16 @@ class CompilationEngine:
                                   .format(tk.current_token))
             ET.SubElement(current_node, tk.token_type().lower()).text \
                 = tk.current_token
+            _type = tk.current_token
             tk.advance()
 
             if tk.token_type() != 'IDENTIFIER':
                 raise SyntaxError('{} is not a valid Jack identifer.'
                                   .format(tk.current_token))
-            ET.SubElement(current_node, 'identifier').text = tk.current_token
+            i = self.subroutine_table.define(tk.current_token, _type, cat)
+            ET.SubElement(current_node, 'identifier',
+                          cat=cat, type=_type, i=str(i)
+                          ).text = tk.current_token
             tk.advance()
 
     def compile_subroutine_body(self, parent_node):
@@ -234,6 +257,7 @@ class CompilationEngine:
             raise SyntaxError('{} expected.'.format('}'))
         ET.SubElement(current_node, 'symbol').text = '}'
         tk.advance()
+        self.subroutine_table.reset()
     
     def compile_var_dec(self, parent_node):
         """Compiles Jack variable declaration(s).
@@ -250,6 +274,7 @@ class CompilationEngine:
 
         ET.SubElement(current_node, 'keyword').text = 'var'
         tk.advance()
+        cat = 'LOCAL'
 
         if tk.current_token not in (
                 'int', 'boolean', 'char', *self.classes_in_dir
@@ -258,12 +283,15 @@ class CompilationEngine:
                               .format(tk.current_token))
         ET.SubElement(current_node, tk.token_type().lower()).text \
             = tk.current_token
+        _type = tk.current_token
         tk.advance()
 
         if tk.token_type() != 'IDENTIFIER':
             raise SyntaxError('{} is not a valid Jack identifer.'
                               .format(tk.current_token))
-        ET.SubElement(current_node, 'identifier').text = tk.current_token
+        i = self.subroutine_table.define(tk.current_token, _type, cat)
+        ET.SubElement(current_node, 'identifier',
+                      cat=cat, type=_type, i=str(i)).text = tk.current_token
         tk.advance()
 
         while tk.current_token != ';':
@@ -275,7 +303,10 @@ class CompilationEngine:
             if tk.token_type() != 'IDENTIFIER':
                 raise SyntaxError('{} is not a valid Jack identifer.'
                                   .format(tk.current_token))
-            ET.SubElement(current_node, 'identifier').text = tk.current_token
+            i = self.subroutine_table.define(tk.current_token, _type, cat)
+            ET.SubElement(current_node, 'identifier',
+                          cat=cat, type=_type, i=str(i)
+                          ).text = tk.current_token
             tk.advance()
         
         ET.SubElement(current_node, 'symbol').text = ';'
@@ -321,7 +352,14 @@ class CompilationEngine:
         if tk.token_type() != 'IDENTIFIER':
                 raise SyntaxError('{} is not a valid Jack identifer.'
                                   .format(tk.current_token))
-        ET.SubElement(current_node, 'identifier').text = tk.current_token
+        if tk.current_token in self.subroutine_table:
+            _type, cat, i = self.subroutine_table.get(tk.current_token)
+        elif tk.current_token in self.class_table:
+            _type, cat, i = self.class_table.get(tk.current_token)
+        else:
+            raise ValueError("{} not declared yet.".format(tk.current_token))
+        ET.SubElement(current_node, 'identifier',
+                      cat=cat, type=_type, i=str(i)).text = tk.current_token
         tk.advance()
 
         if tk.current_token == '[':
@@ -439,18 +477,27 @@ class CompilationEngine:
         if tk.token_type() != 'IDENTIFIER':
             raise SyntaxError('{} is not a proper identifier.'
                               .format(tk.current_token))
-        ET.SubElement(current_node, 'identifier').text = tk.current_token
-        tk.advance()
-
-        if tk.current_token == '.':
+        if tk.next_token == '.':
+            if tk.current_token in self.classes_in_dir:
+                _type, cat, i = tk.current_token, 'CLASS', '-1'
+            elif tk.current_token in self.subroutine_table:
+                _type, cat, i = self.subroutine_table.get(tk.current_token)
+            elif tk.current_token in self.class_table:
+                _type, cat, i = self.class_table.get(tk.current_token)
+            else:
+                raise ValueError('{} not declared.'.format(tk.current_token))
+            ET.SubElement(current_node, 'identifier',
+                          cat=cat, type=_type, i=str(i)
+                          ).text = tk.current_token
+            tk.advance()
             ET.SubElement(current_node, 'symbol').text = '.'
             tk.advance()
 
-            if tk.token_type() != 'IDENTIFIER':
-                raise SyntaxError('{} is not a proper identifier.'
-                                  .format(tk.current_token))
-            ET.SubElement(current_node, 'identifier').text = tk.current_token
-            tk.advance()
+        if tk.token_type() != 'IDENTIFIER':
+            raise SyntaxError('{} is not a proper identifier.'
+                              .format(tk.current_token))
+        ET.SubElement(current_node, 'identifier').text = tk.current_token
+        tk.advance()
 
         if tk.current_token != '(':
             raise SyntaxError('"(" expected.')
@@ -569,29 +616,10 @@ class CompilationEngine:
             tk.advance()
         else:
             if tk.token_type() != 'IDENTIFIER':
-                raise SyntaxError('{} is not a valid identifier.'
-                                  .format(tk.current_token))
-            ET.SubElement(current_node, 'identifier').text = tk.current_token
-            tk.advance()
-
-            if tk.current_token == '[':
-                ET.SubElement(current_node, 'symbol').text = '['
-                tk.advance()
-                self.compile_expression(current_node)
-                ET.SubElement(current_node, 'symbol').text = ']'
-                tk.advance()
-            elif tk.current_token == '(':
-                ET.SubElement(current_node, 'symbol').text = '('
-                tk.advance()
-                self.compile_expression_list(current_node)
-                ET.SubElement(current_node, 'symbol').text = ')'
-                tk.advance()
-            elif tk.current_token == '.':
-                ET.SubElement(current_node, 'symbol').text = '.'
-                tk.advance()
-                if tk.token_type() != 'IDENTIFIER':
                     raise SyntaxError('{} is not a valid identifier.'
                                       .format(tk.current_token))
+            
+            if tk.next_token == '(':    
                 ET.SubElement(current_node, 'identifier').text \
                     = tk.current_token
                 tk.advance()
@@ -600,6 +628,41 @@ class CompilationEngine:
                 self.compile_expression_list(current_node)
                 ET.SubElement(current_node, 'symbol').text = ')'
                 tk.advance()
+            
+            else:   
+                if tk.current_token in self.classes_in_dir:
+                    _type, cat, i = tk.current_token, 'CLASS', '-1'
+                elif tk.current_token in self.subroutine_table:
+                    _type, cat, i = self.subroutine_table.get(tk.current_token)
+                elif tk.current_token in self.class_table:
+                    _type, cat, i = self.class_table.get(tk.current_token)
+                else:
+                    raise ValueError('{} not defined'.format(tk.current_token))
+                ET.SubElement(current_node, 'identifier',
+                              cat=cat, type=_type, i=str(i)
+                              ).text = tk.current_token
+                tk.advance()
+
+                if tk.current_token == '[':
+                    ET.SubElement(current_node, 'symbol').text = '['
+                    tk.advance()
+                    self.compile_expression(current_node)
+                    ET.SubElement(current_node, 'symbol').text = ']'
+                    tk.advance()
+                elif tk.current_token == '.':
+                    ET.SubElement(current_node, 'symbol').text = '.'
+                    tk.advance()
+                    if tk.token_type() != 'IDENTIFIER':
+                        raise SyntaxError('{} is not a valid identifier.'
+                                          .format(tk.current_token))
+                    ET.SubElement(current_node, 'identifier').text \
+                        = tk.current_token
+                    tk.advance()
+                    ET.SubElement(current_node, 'symbol').text = '('
+                    tk.advance()
+                    self.compile_expression_list(current_node)
+                    ET.SubElement(current_node, 'symbol').text = ')'
+                    tk.advance()
 
 
 if __name__ == '__main__':

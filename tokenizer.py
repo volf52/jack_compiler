@@ -174,6 +174,14 @@ class Tokenizer:
 
         if self.has_more_tokens():
             return self.tokens[self.current_token_index + 1]
+    
+    @property
+    def prev_token(self):
+        """Returns the previous token, if there is one. 
+        """
+
+        if self.current_token_index > 0:
+            return self.tokens[self.current_token_index - 1]
 
 
 if __name__ == "__main__":
