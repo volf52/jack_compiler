@@ -16,16 +16,12 @@ def get_names(path):
     """
 
     paths = []
-    names = []
     out_names = []
     if os.path.isfile(path):
         paths.append(path)
         path, tmp_name = os.path.split(path)
         name, ext = os.path.splitext(tmp_name)
-        out_names.append(os.path.join(path, name + '_local.xml'))
-        if path:
-                names = [os.path.splitext(x)[0] for x in os.listdir(path)
-                         if os.path.splitext(x)[1] == '.jack']
+        out_names.append(os.path.join(path, name + '.vm'))
         if ext != '.jack':
             print("Provided file is not a jack file.")
             sys.exit(1)
@@ -35,11 +31,11 @@ def get_names(path):
                  if os.path.splitext(x)[1] == '.jack']
         names = [os.path.splitext(x)[0] for x in paths]
         paths = [os.path.join(path, x) for x in paths]
-        out_names = [os.path.join(path, x + '_local.xml') for x in names]
+        out_names = [os.path.join(path, x + '.vm') for x in names]
     else:
         print('{} doesn\'t exist.'.format(path))
         sys.exit(1)
-    return names, paths, out_names
+    return paths, out_names
 
 
 def main():
@@ -47,12 +43,15 @@ def main():
     parser.add_argument('inp_path', action="store")
 
     args = parser.parse_args()
-    classes_in_dir, file_paths, outnames = get_names(args.inp_path)
-    for name, pth, out_pth in zip(classes_in_dir, file_paths, outnames):
+    file_paths, outnames = get_names(args.inp_path)
+
+    for pth, out_pth in zip(file_paths, outnames):
         with open(pth, 'r') as f:
             tk = Tokenizer(f.readlines())
-        engine = CompilationEngine(tk, name, out_pth, classes_in_dir)
+        engine = CompilationEngine(tk, out_pth)
         engine.compile_class()
+    
+    print("Finished compilation...")
 
 
 if __name__ == '__main__':

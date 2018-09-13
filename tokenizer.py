@@ -40,7 +40,7 @@ class Tokenizer:
         """
 
         symbol_type = None
-        token = self.current_token
+        token = self.curr_token
         if token in ('class', 'constructor', 'function', 'method', 
                      'field', 'static', 'var', 'int', 'char', 'if',
                      'boolean', 'void', 'true', 'false', 'null',
@@ -136,7 +136,7 @@ class Tokenizer:
             if not comment_on:
                 lines.append(line)
 
-            if line.startswith('*/'):
+            if line.startswith('*/') or line.endswith('*/'):
                 comment_on = False
 
         lines = [line.split('//')[0].strip() for line in lines 
@@ -158,7 +158,7 @@ class Tokenizer:
             not line.startswith('/*'))
 
     @property
-    def current_token(self):
+    def curr_token(self):
         """Return the current token. 
         
         Returns:
@@ -185,10 +185,12 @@ class Tokenizer:
 
 
 if __name__ == "__main__":
-    with open('10/Square/SquareGame.jack', 'r') as f:
+    with open('11/Square/SquareGame.jack', 'r') as f:
         TEST_LINES = f.readlines()
     TOKENIZER = Tokenizer(TEST_LINES)
-    print(TOKENIZER.tokens)
+    # print(TOKENIZER.tokens)
+    for i, tk in enumerate(TOKENIZER.tokens):
+        print(i, tk)
     print('-----------------')
     print(TOKENIZER.handle_token_candidate('a/=2;b+=3;'))
     

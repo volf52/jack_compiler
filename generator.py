@@ -15,8 +15,6 @@ class VMWriter:
         self._segment_mapping.update({
             'ARG': 'argument', 'CONST': 'constant', 'FIELD': 'this'
         })
-        self.if_count = 0
-        self.while_count = 0
         self.stream = _stream
     
     def write_push_pop(self, command, segment, index):
@@ -32,15 +30,15 @@ class VMWriter:
         if seg is None:
             raise TypeError("{} segment is not available.".format(segment))
         
-        return "{} {} {}".format(command, segment, index)
+        self.stream.append("{} {} {}".format(command, seg, index))
     
     def write_arithmetic(self, command):
         """Writes a VM supported arithmetic command.
         
         Args:
-            command (str): One of the supported VM commands.
+            command (str): One of the supported VM arithmetic commands.
         """
-
+        
         if command not in ('ADD', 'SUB', 'NEG', 'EQ', 'GT', 
                            'LT', 'AND', 'OR', 'NOT'):
             raise TypeError('{} not supported.'.format(command))
